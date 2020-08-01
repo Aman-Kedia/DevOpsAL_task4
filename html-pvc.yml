@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: html-pvc
+  labels:
+    name: htmlpvc
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30007
+  selector:
+    env: production
+    region: IN
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: html-pvc
+  labels:
+    name: htmlpvc
+spec:
+  accessModes:
+   - ReadWriteOnce
+  resources:  
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: html-deploy
+  labels:
+    name: htmlpvc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      env: production
+      region: IN
+  template:
+    metadata:
+      name: html-pod
+      labels:
+        env: production
+        region: IN
+    spec:
+      containers:
+      - name: html-con
+        image: aman14/httpd-web:latest
+        volumeMounts:
+        - name: html-vol
+          mountPath: /usr/local/apache2/htdocs/
+      volumes:
+      - name: html-vol
+        persistentVolumeClaim:
+          claimName: html-pvc
